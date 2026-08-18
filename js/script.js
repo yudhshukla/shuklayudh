@@ -3,6 +3,7 @@ document.getElementById('year').textContent = new Date().getFullYear();
 function typeElement(el, msPerChar, onComplete) {
   const text = el.textContent;
   el.textContent = '';
+  el.classList.remove('pre-type');
   el.classList.add('typing-cursor');
   let i = 0;
   (function step() {
@@ -26,4 +27,19 @@ if (heroHeading && heroLead) {
   typeElement(heroHeading, msPerChar, () => {
     typeElement(heroLead, msPerChar);
   });
+}
+
+const postitRows = document.querySelectorAll('.postit-row');
+
+if (postitRows.length) {
+  const revealObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('in-view');
+        revealObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.3 });
+
+  postitRows.forEach((row) => revealObserver.observe(row));
 }
