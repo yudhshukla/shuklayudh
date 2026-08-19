@@ -861,6 +861,19 @@ section + section,
 
 .postit-row.in-view .slant-img-wrap .tape { transform: scaleX(1); }
 
+/* ---------- Page-transition sweep ----------
+   Full-viewport block used when clicking into a project (see
+   script.js). No color/transform is set here beyond the resting
+   hidden state — everything else is driven inline by JS so the
+   color can match whichever card was clicked. */
+.page-sweep {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  transform: scaleX(0);
+}
+
 /* ---------- Footer ---------- */
 footer {
   padding: 40px 0;
@@ -868,6 +881,7 @@ footer {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
+  border-top: 1px solid var(--line);
 }
 
 footer p {

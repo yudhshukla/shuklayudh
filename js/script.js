@@ -106,3 +106,53 @@ document.querySelectorAll('.project-card').forEach((card) => {
     if (!card.contains(e.relatedTarget)) reset();
   });
 });
+
+// Sweep transition into a project: a full-screen block in the
+// clicked card's own color wipes across, then the destination page
+// (project-template.html's inline pre-cover script snaps its overlay
+// to already-covering, in that same color, before first paint) keeps
+// the same wipe moving outward to reveal itself — reads as one
+// continuous block sliding across, not two separate animations.
+const pageSweep = document.getElementById('pageSweep');
+
+document.querySelectorAll('.project-card a').forEach((link) => {
+  link.addEventListener('click', (e) => {
+    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || !pageSweep) return;
+    e.preventDefault();
+    const href = link.href;
+    const color = getComputedStyle(link.closest('.project-card')).backgroundColor;
+
+    sessionStorage.setItem('sweepColor', color);
+
+    pageSweep.style.transition = 'none';
+    pageSweep.style.background = color;
+    pageSweep.style.transformOrigin = 'left';
+    pageSweep.style.transform = 'scaleX(0)';
+    pageSweep.offsetHeight; // force reflow before enabling the transition
+    pageSweep.style.transition = 'transform 0.4s steps(10, end)';
+    pageSweep.style.transform = 'scaleX(1)';
+
+    setTimeout(() => { window.location.href = href; }, 420);
+  });
+});
+
+if (pageSweep && sessionStorage.getItem('sweepColor')) {
+  sessionStorage.removeItem('sweepColor');
+  requestAnimationFrame(() => {
+    setTimeout(() => {
+      pageSweep.style.transition = 'transform 0.4s steps(10, end)';
+      pageSweep.style.transform = 'scaleX(0)';
+    }, 100);
+  });
+}
+
+// Back/forward navigation often restores the page from the browser's
+// bfcache instead of reloading it — meaning it reappears frozen in
+// whatever DOM state it was left in, mid-sweep, overlay still
+// covering the screen. Force it back to hidden whenever that happens.
+window.addEventListener('pageshow', (e) => {
+  if (e.persisted && pageSweep) {
+    pageSweep.style.transition = 'none';
+    pageSweep.style.transform = 'scaleX(0)';
+  }
+});

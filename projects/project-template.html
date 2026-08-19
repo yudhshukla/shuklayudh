@@ -12,6 +12,18 @@
 </head>
 <body>
 
+  <div class="page-sweep" id="pageSweep"></div>
+  <script>
+    (function () {
+      var color = sessionStorage.getItem('sweepColor');
+      if (!color) return;
+      var el = document.getElementById('pageSweep');
+      el.style.background = color;
+      el.style.transformOrigin = 'right';
+      el.style.transform = 'scaleX(1)';
+    })();
+  </script>
+
   <nav class="nav">
     <div class="wrap">
       <a href="../index.html" class="icon-scale" aria-label="Home">
@@ -131,7 +143,7 @@
 
   <footer>
     <div class="wrap" style="display:flex; align-items:center; justify-content:space-between;">
-      <p>© Your Name</p>
+      <p>© Yudh Shukla</p>
       <div class="nav-icons">
         <a href="https://linkedin.com/in/yourprofile" target="_blank" rel="noopener" aria-label="LinkedIn" class="icon-scale">
           <img src="../assets/linkedin.png" alt="" class="scale-icon" />
