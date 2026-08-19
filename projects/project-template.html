@@ -6,35 +6,35 @@
   <title>Project Name One — Your Name</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&family=Source+Sans+3:wght@300;400&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Cousine:wght@400;700&family=Source+Sans+3:wght@300;400&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../css/style.css" />
+  <link rel="icon" type="image/png" href="../assets/tree.png" />
 </head>
 <body>
 
   <nav class="nav">
     <div class="wrap">
-      <a href="../index.html" class="name">Your Name</a>
-      <div class="nav-right">
-        <ul>
-          <li><a href="../index.html#work" class="underline-draw">Work</a></li>
-          <li><a href="../about.html" class="underline-draw">About</a></li>
-        </ul>
-        <div class="icon-links">
-          <a href="https://linkedin.com/in/yourprofile" target="_blank" rel="noopener" aria-label="LinkedIn" class="underline-draw">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
-              <rect x="2.5" y="2.5" width="19" height="19" rx="4" />
-              <line x1="7.5" y1="10" x2="7.5" y2="16.5" />
-              <circle cx="7.5" cy="7" r="0.9" fill="currentColor" stroke="none" />
-              <path d="M11.5 16.5V10M11.5 12.7c0-1.5 1-2.7 2.5-2.7s2.5 1.2 2.5 2.7v3.8" />
-            </svg>
-          </a>
-          <a href="mailto:you@email.com" aria-label="Email" class="underline-draw">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
-              <rect x="2.5" y="5" width="19" height="14" rx="2.5" />
-              <path d="M3.5 6.5l8.5 6.5 8.5-6.5" />
-            </svg>
-          </a>
-        </div>
+      <a href="../index.html" class="icon-scale" aria-label="Home">
+        <img src="../assets/home.png" alt="" class="scale-icon" />
+        <span class="icon-tip">Yudh Shukla</span>
+      </a>
+      <div class="nav-icons">
+        <a href="../index.html#work" class="icon-scale" aria-label="Work">
+          <img src="../assets/work.png" alt="" class="scale-icon" />
+          <span class="icon-tip">Work</span>
+        </a>
+        <a href="../about.html" class="icon-scale" aria-label="About">
+          <img src="../assets/about.png" alt="" class="scale-icon" />
+          <span class="icon-tip">About</span>
+        </a>
+        <a href="https://linkedin.com/in/yourprofile" target="_blank" rel="noopener" aria-label="LinkedIn" class="icon-scale">
+          <img src="../assets/linkedin.png" alt="" class="scale-icon" />
+          <span class="icon-tip">LinkedIn</span>
+        </a>
+        <a href="mailto:you@email.com" aria-label="Email" class="icon-scale">
+          <img src="../assets/email.png" alt="" class="scale-icon" />
+          <span class="icon-tip">Email</span>
+        </a>
       </div>
     </div>
   </nav>
@@ -92,7 +92,7 @@
           <li>Key insight three — with a supporting detail or quote.</li>
         </ul>
         <figure>
-          <img src="https://placehold.co/1000x560/eef0e7/2f5233?text=Research+Artifact" alt="Research artifact placeholder" />
+          <img src="https://placehold.co/1000x560/eef0e7/2f5233?text=Research+Artifact" alt="Research artifact placeholder" class="pixel-frame" />
           <figcaption>Caption describing this artifact — e.g. affinity map, interview synthesis, survey results.</figcaption>
         </figure>
       </div>
@@ -103,7 +103,7 @@
         <h2>Design Process</h2>
         <p>Walk through how insights shaped decisions. Show iteration — early sketches or wireframes, what you tested, and what changed as a result.</p>
         <figure>
-          <img src="https://placehold.co/1000x560/eef0e7/2f5233?text=Iteration" alt="Design iteration placeholder" />
+          <img src="https://placehold.co/1000x560/eef0e7/2f5233?text=Iteration" alt="Design iteration placeholder" class="pixel-frame" />
           <figcaption>Caption describing this iteration — what changed and why.</figcaption>
         </figure>
       </div>
@@ -114,7 +114,7 @@
         <h2>Solution</h2>
         <p>Describe the final design. What does it look like, and how does it address the problem you identified?</p>
         <figure>
-          <img src="https://placehold.co/1000x560/eef0e7/2f5233?text=Final+Design" alt="Final design placeholder" />
+          <img src="https://placehold.co/1000x560/eef0e7/2f5233?text=Final+Design" alt="Final design placeholder" class="pixel-frame" />
           <figcaption>Caption describing the final solution.</figcaption>
         </figure>
       </div>
@@ -131,21 +131,15 @@
 
   <footer>
     <div class="wrap" style="display:flex; align-items:center; justify-content:space-between;">
-      <p>© <span id="year"></span> Your Name</p>
-      <div class="icon-links">
-        <a href="https://linkedin.com/in/yourprofile" target="_blank" rel="noopener" aria-label="LinkedIn" class="underline-draw">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
-            <rect x="2.5" y="2.5" width="19" height="19" rx="4" />
-            <line x1="7.5" y1="10" x2="7.5" y2="16.5" />
-            <circle cx="7.5" cy="7" r="0.9" fill="currentColor" stroke="none" />
-            <path d="M11.5 16.5V10M11.5 12.7c0-1.5 1-2.7 2.5-2.7s2.5 1.2 2.5 2.7v3.8" />
-          </svg>
+      <p>© Your Name</p>
+      <div class="nav-icons">
+        <a href="https://linkedin.com/in/yourprofile" target="_blank" rel="noopener" aria-label="LinkedIn" class="icon-scale">
+          <img src="../assets/linkedin.png" alt="" class="scale-icon" />
+          <span class="icon-tip">LinkedIn</span>
         </a>
-        <a href="mailto:you@email.com" aria-label="Email" class="underline-draw">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
-            <rect x="2.5" y="5" width="19" height="14" rx="2.5" />
-            <path d="M3.5 6.5l8.5 6.5 8.5-6.5" />
-          </svg>
+        <a href="mailto:you@email.com" aria-label="Email" class="icon-scale">
+          <img src="../assets/email.png" alt="" class="scale-icon" />
+          <span class="icon-tip">Email</span>
         </a>
       </div>
     </div>
