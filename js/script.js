@@ -55,6 +55,21 @@ if (cardReveals.length) {
   });
 }
 
+const timeline = document.querySelector('.timeline');
+
+if (timeline) {
+  const timelineObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('in-view');
+        timelineObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.2 });
+
+  timelineObserver.observe(timeline);
+}
+
 const postitRows = document.querySelectorAll('.postit-row');
 
 if (postitRows.length) {
