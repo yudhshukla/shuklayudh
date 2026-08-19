@@ -1,7 +1,15 @@
 /* ---------- Reset ---------- */
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
-html { scroll-behavior: smooth; font-size: 18px; }
+/* overflow-x guard: several entrance animations (post-its, photos,
+   the pushpin) scale elements above 100% before they settle into
+   view. getBoundingClientRect()/scroll-overflow reflects the
+   post-transform visual size, so a scaled-up element can briefly be
+   wider than the viewport on narrower screens and trigger horizontal
+   scroll. This clips that without affecting normal vertical scroll. */
+html, body { overflow-x: hidden; }
+
+html { scroll-behavior: smooth; font-size: 16px; }
 
 body {
   font-family: 'Source Sans 3', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -41,14 +49,18 @@ h1, h2, h3, .display {
   );
 }
 
-/* ---------- Tokens ---------- */
+/* ---------- Tokens ----------
+   Palette: darkest green + off-white, plus blue/olive/brown/babyblue.
+   --ink-soft is a translucent tint of --ink (same hue, softened for
+   secondary text), not an extra color. */
 :root {
   --bg: #faf8f3;
-  --bg-alt: #eef0e7;
   --ink: #1c2b20;
-  --ink-soft: #5c6b5f;
-  --accent: #2f5233;
-  --accent-soft: #4f7355;
+  --ink-soft: rgba(28, 43, 32, 0.68);
+  --blue: #1446a0;
+  --olive: #88ab75;
+  --brown: #51291e;
+  --babyblue: #92bcea;
   --line: rgba(28, 43, 32, 0.14);
   --pad: clamp(20px, 5vw, 72px);
   --text-lead: clamp(1.3rem, 2.4vw, 1.65rem);
@@ -60,7 +72,7 @@ html.js .pre-type { visibility: hidden; }
 /* ---------- Layout ---------- */
 .wrap {
   width: 100%;
-  max-width: 1440px;
+  max-width: 1260px;
   margin: 0 auto;
   padding: 0 var(--pad);
 }
@@ -94,6 +106,14 @@ section + section { border-top: 1px solid var(--line); }
   gap: 22px;
 }
 
+.nav-divider {
+  display: inline-block;
+  width: 2px;
+  height: 24px;
+  background: var(--ink);
+  margin: 0 4px;
+}
+
 .icon-scale {
   position: relative;
   display: flex;
@@ -116,9 +136,9 @@ section + section { border-top: 1px solid var(--line); }
 
 .icon-tip {
   position: absolute;
-  bottom: calc(100% + 12px);
+  top: calc(100% + 12px);
   left: 50%;
-  transform: translateX(-50%) translateY(4px);
+  transform: translateX(-50%) translateY(-4px);
   background: var(--ink);
   color: var(--bg);
   font-family: 'Cousine', 'Courier New', monospace;
@@ -126,7 +146,7 @@ section + section { border-top: 1px solid var(--line); }
   white-space: nowrap;
   padding: 5px 9px;
   border: 2px solid var(--ink);
-  clip-path: polygon(0 4px, 4px 4px, 4px 0, calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px, 100% 100%, 0 100%);
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%, 4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px));
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.12s ease, transform 0.12s ease;
@@ -191,21 +211,15 @@ section + section { border-top: 1px solid var(--line); }
   font-size: 0.95rem;
   font-weight: 400;
   color: var(--ink);
-  background: #cfe3bb;
+  background: var(--olive);
   border: 3px solid var(--ink);
   padding: 14px 30px;
-  filter: drop-shadow(5px 5px 0 var(--ink));
-  transition: transform 0.15s ease, filter 0.15s ease;
+  transition: transform 0.15s ease;
 }
 
 .btn-block:hover,
 .btn-block:focus-visible {
   transform: scale(1.06);
-}
-
-.btn-block:active {
-  transform: translate(3px, 3px);
-  filter: drop-shadow(2px 2px 0 var(--ink));
 }
 
 .hero .image-frame {
@@ -219,7 +233,7 @@ section + section { border-top: 1px solid var(--line); }
   left: 16px;
   right: -16px;
   bottom: -16px;
-  background: var(--accent-soft);
+  background: var(--ink);
   z-index: 0;
 }
 
@@ -230,8 +244,7 @@ section + section { border-top: 1px solid var(--line); }
   aspect-ratio: 4 / 3;
   overflow: hidden;
   border: 4px solid var(--ink);
-  background: var(--bg-alt);
-  filter: drop-shadow(5px 5px 0 var(--ink));
+  background: rgba(136, 171, 117, 0.18);
 }
 
 .hero .image-frame .thumb img {
@@ -240,13 +253,76 @@ section + section { border-top: 1px solid var(--line); }
   object-fit: cover;
 }
 
+/* Speech bubble that pops out of the hero image once the typing
+   intro finishes (JS adds .show ~2s after the lead line completes).
+   The overshoot easing does the "pops a bit big, settles to normal
+   size" motion on its own — no keyframes needed.
+
+   Split into an outer (unclipped) wrapper and an inner notched box:
+   the notch's clip-path clips anything positioned outside its own
+   box, including pseudo-elements, so the tail lives on the outer
+   element instead of getting cut off by the inner box's clip-path. */
+.hero-bubble {
+  position: absolute;
+  top: -28px;
+  right: -40px;
+  z-index: 3;
+  opacity: 0;
+  transform: scale(0.2);
+  transform-origin: bottom left;
+  transition: opacity 0.25s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  pointer-events: none;
+}
+
+.hero-bubble.show {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.hero-bubble-box {
+  --notch: 6px;
+  max-width: 220px;
+  background: var(--bg);
+  color: var(--ink);
+  border: 3px solid var(--ink);
+  padding: 12px 16px;
+  font-family: 'Cousine', 'Courier New', monospace;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.hero-bubble::after {
+  content: "";
+  position: absolute;
+  bottom: -15px;
+  left: 26px;
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-top: 15px solid var(--ink);
+}
+
+.hero-bubble::before {
+  content: "";
+  position: absolute;
+  bottom: -9px;
+  left: 29px;
+  width: 0;
+  height: 0;
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 9px solid var(--bg);
+  z-index: 1;
+}
+
 /* ---------- Section headings ---------- */
 .section-label {
   font-family: 'Cousine', 'Courier New', monospace;
   font-size: 0.85rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: var(--accent);
+  color: var(--blue);
   margin-bottom: 12px;
 }
 
@@ -277,29 +353,117 @@ section + section { border-top: 1px solid var(--line); }
   gap: 36px;
 }
 
+/* Cards slide/fade in in blocky steps instead of just appearing.
+   Deliberately opacity + transform, not clip-path — the card inside
+   already has its own clip-path (the notched pixel-frame corners),
+   and stacking a second clip-path on the wrapper risked the whole
+   card staying invisible if the two didn't compose cleanly. */
+.card-reveal {
+  position: relative;
+  opacity: 0;
+  transform: translateX(-28px);
+  transition: opacity 0.3s steps(6, end), transform 0.3s steps(6, end);
+}
+
+.card-reveal.in-view {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* Pixel selection arrows flanking a card on hover/focus, like a
+   game menu cursor pointing at the selected item */
+.card-arrow {
+  position: absolute;
+  top: 50%;
+  width: 12px;
+  height: 16px;
+  background: var(--ink);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.card-arrow-left {
+  left: -18px;
+  transform: translateY(-50%) scale(1);
+  clip-path: polygon(
+    0 0%, 25% 0%, 25% 12.5%, 50% 12.5%, 50% 25%, 75% 25%, 75% 37.5%, 100% 37.5%,
+    100% 62.5%, 75% 62.5%, 75% 75%, 50% 75%, 50% 87.5%, 25% 87.5%, 25% 100%, 0 100%
+  );
+}
+
+.card-arrow-right {
+  right: -18px;
+  transform: translateY(-50%) scaleX(-1) scale(1);
+  clip-path: polygon(
+    0 0%, 25% 0%, 25% 12.5%, 50% 12.5%, 50% 25%, 75% 25%, 75% 37.5%, 100% 37.5%,
+    100% 62.5%, 75% 62.5%, 75% 75%, 50% 75%, 50% 87.5%, 25% 87.5%, 25% 100%, 0 100%
+  );
+}
+
+.card-reveal:hover .card-arrow-left,
+.card-reveal:focus-within .card-arrow-left {
+  opacity: 1;
+  animation: arrow-pulse-left 0.8s ease-in-out infinite;
+}
+
+.card-reveal:hover .card-arrow-right,
+.card-reveal:focus-within .card-arrow-right {
+  opacity: 1;
+  animation: arrow-pulse-right 0.8s ease-in-out infinite;
+}
+
+@keyframes arrow-pulse-left {
+  0%, 100% { transform: translateY(-50%) scale(1); }
+  50% { transform: translateY(-50%) scale(1.3); }
+}
+
+@keyframes arrow-pulse-right {
+  0%, 100% { transform: translateY(-50%) scaleX(-1) scale(1); }
+  50% { transform: translateY(-50%) scaleX(-1) scale(1.3); }
+}
+
 .project-card {
   --notch: 10px;
   position: relative;
   padding: 36px;
-  background: var(--bg);
-  border: 4px solid var(--ink);
-  filter: drop-shadow(6px 6px 0 var(--ink));
-  transition: transform 0.2s ease, filter 0.2s ease;
+  background: var(--olive);
+  border-style: solid;
+  border-width: 4px;
+  border-top-color: var(--babyblue);
+  border-left-color: var(--babyblue);
+  border-right-color: var(--ink);
+  border-bottom-color: var(--ink);
+  transition: transform 0.2s ease;
 }
+
+/* Each card takes one of the four palette colors at full strength
+   instead of a faint tint — heading flips to off-white on the three
+   dark ones so it stays legible; the bevel border stays consistent
+   across all four (babyblue highlight, ink shadow edge). */
+.projects-grid .card-reveal:nth-child(4n+1) .project-card { background: var(--babyblue); }
+.projects-grid .card-reveal:nth-child(4n+1) .project-card h3 { color: var(--ink); }
+
+.projects-grid .card-reveal:nth-child(4n+2) .project-card { background: var(--brown); }
+.projects-grid .card-reveal:nth-child(4n+2) .project-card h3 { color: var(--bg); }
+
+.projects-grid .card-reveal:nth-child(4n+3) .project-card { background: var(--olive); }
+.projects-grid .card-reveal:nth-child(4n+3) .project-card h3 { color: var(--ink); }
+
+.projects-grid .card-reveal:nth-child(4n+4) .project-card { background: var(--blue); }
+.projects-grid .card-reveal:nth-child(4n+4) .project-card h3 { color: var(--bg); }
 
 .project-card:hover {
   transform: translateY(-4px);
-  filter: drop-shadow(8px 10px 0 var(--ink));
 }
 
 .project-card .thumb {
   --notch: 10px;
   position: relative;
   aspect-ratio: 4 / 3;
-  background: var(--bg-alt);
+  background: rgba(136, 171, 117, 0.18);
   overflow: hidden;
   border: 4px solid var(--ink);
-  filter: drop-shadow(5px 5px 0 var(--ink));
   margin-bottom: 24px;
 }
 
@@ -310,20 +474,21 @@ section + section { border-top: 1px solid var(--line); }
 }
 
 /* Dialogue box: rises from the bottom of the image, covers only a
-   portion of it, types out the summary like the hero intro */
+   portion of it, types out the summary like the hero intro. A blinking
+   "more text" triangle reads as a game text box rather than a plain panel. */
 .project-card .dialogue-box {
-  --notch: 8px;
+  --notch: 6px;
   position: absolute;
   left: 10px;
   right: 10px;
   bottom: 10px;
-  height: 46%;
+  height: 30%;
   box-sizing: border-box;
   display: flex;
   align-items: center;
-  background: var(--ink);
-  border: 3px solid var(--bg);
-  padding: 10px 16px;
+  background: var(--bg);
+  border: 3px solid var(--ink);
+  padding: 7px 14px;
   transform: translateY(120%);
   transition: transform 0.35s cubic-bezier(.65,.05,.36,1);
   z-index: 2;
@@ -334,40 +499,63 @@ section + section { border-top: 1px solid var(--line); }
   transform: translateY(0);
 }
 
-.project-card .dialogue-box p {
-  color: var(--bg);
-  font-family: 'Cousine', 'Courier New', monospace;
-  font-size: 0.82rem;
-  line-height: 1.45;
+.project-card .dialogue-box::after {
+  content: "";
+  position: absolute;
+  right: 10px;
+  bottom: 7px;
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 6px solid var(--ink);
+  animation: blink 1s steps(1) infinite;
 }
 
-.project-card .index {
-  display: inline-block;
+.project-card .dialogue-box p {
+  color: var(--ink);
   font-family: 'Cousine', 'Courier New', monospace;
-  font-weight: 700;
-  font-size: 0.85rem;
-  color: var(--bg);
-  background: var(--accent);
-  border: 2px solid var(--ink);
-  padding: 3px 10px;
-  margin-bottom: 12px;
+  font-size: 0.72rem;
+  line-height: 1.4;
+  padding-right: 14px;
 }
 
 .project-card h3 {
   font-size: 1.4rem;
   font-weight: 700;
   margin-bottom: 10px;
+  color: var(--ink);
 }
 
 .project-card .tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.project-card .tag {
   display: inline-block;
   font-family: 'Cousine', 'Courier New', monospace;
   font-size: 0.78rem;
-  color: var(--ink);
-  background: var(--bg-alt);
-  border: 2px solid var(--accent);
-  padding: 3px 10px;
+  color: var(--bg);
+  padding: 4px 11px 3px;
+  border-style: solid;
+  border-width: 2px;
+  border-top-color: var(--babyblue);
+  border-left-color: var(--babyblue);
+  border-right-color: var(--ink);
+  border-bottom-color: var(--ink);
+  clip-path: polygon(
+    0 3px, 3px 3px, 3px 0,
+    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
+    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
+    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
+  );
 }
+
+.project-card .tag-green { background: var(--ink); }
+.project-card .tag-blue { background: var(--blue); }
+.project-card .tag-brown { background: var(--brown); }
 
 /* ---------- About page ---------- */
 .about-header { padding-top: 96px; padding-bottom: 64px; }
@@ -375,7 +563,7 @@ section + section { border-top: 1px solid var(--line); }
 .about-header h1 {
   font-size: clamp(2.1rem, 4vw, 2.9rem);
   font-weight: 700;
-  max-width: 20ch;
+  max-width: 40ch;
   margin-bottom: 24px;
 }
 
@@ -400,15 +588,39 @@ section + section { border-top: 1px solid var(--line); }
   width: clamp(298px, 36vw, 435px);
   min-height: 272px;
   padding: 38px 36px;
-  background: #cfe3bb;
+  background: var(--olive);
   color: var(--ink);
-  border: 3px solid var(--ink);
-  filter: drop-shadow(6px 6px 0 var(--ink));
+  border-style: solid;
+  border-width: 3px;
+  border-top-color: var(--babyblue);
+  border-left-color: var(--babyblue);
+  border-right-color: var(--ink);
+  border-bottom-color: var(--ink);
+  clip-path: polygon(
+    0 var(--notch), var(--notch) var(--notch), var(--notch) 0,
+    calc(100% - var(--notch)) 0, calc(100% - var(--notch)) var(--notch), 100% var(--notch),
+    100% calc(100% - var(--notch)), calc(100% - var(--notch)) calc(100% - var(--notch)), calc(100% - var(--notch)) 100%,
+    var(--notch) 100%, var(--notch) calc(100% - var(--notch)), 0 calc(100% - var(--notch))
+  );
   --tilt: -3deg;
-  transform: rotate(var(--tilt));
+  opacity: 0;
+  transform: scale(1.35) rotate(var(--tilt));
+  transition: opacity 0.3s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .postit-row:nth-child(even) .postit { --tilt: 3deg; }
+
+.postit-row.in-view .postit {
+  opacity: 1;
+  transform: scale(1) rotate(var(--tilt));
+}
+
+/* Each note takes one of the four palette colors at full strength,
+   with off-white text/border on the three darker ones for contrast */
+.postit-row:nth-child(4n+1) .postit { background: var(--babyblue); color: var(--ink); }
+.postit-row:nth-child(4n+2) .postit { background: var(--blue); color: var(--bg); }
+.postit-row:nth-child(4n+3) .postit { background: var(--brown); color: var(--bg); }
+.postit-row:nth-child(4n+4) .postit { background: var(--olive); color: var(--ink); }
 
 .postit-row .postit p {
   font-size: 1.45rem;
@@ -426,10 +638,8 @@ section + section { border-top: 1px solid var(--line); }
   opacity: 0;
   transform-origin: 0% 0%;
   transform: translate(26px, -26px) scale(1.84);
-  filter: drop-shadow(0 6px 5px rgba(0, 0, 0, 0.2));
-  transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
-              filter 0.4s ease,
-              opacity 0.5s ease;
+  transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.15s,
+              opacity 0.5s ease 0.15s;
 }
 
 .pixel-pushpin::before {
@@ -452,24 +662,42 @@ section + section { border-top: 1px solid var(--line); }
 .postit-row.in-view .pixel-pushpin {
   opacity: 1;
   transform: translate(0, 0) scale(1.6);
-  filter: drop-shadow(1px 2px 2px rgba(0, 0, 0, 0.35));
 }
 
 .postit-row .slant-img-wrap {
   position: relative;
   flex: 0 0 auto;
   width: clamp(288px, 37vw, 535px);
-  transform: rotate(3deg);
+  --img-tilt: 3deg;
+  opacity: 0;
+  transform: scale(1.3) rotate(var(--img-tilt));
+  transition: opacity 0.3s ease, transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.postit-row:nth-child(even) .slant-img-wrap { transform: rotate(-3deg); }
+.postit-row:nth-child(even) .slant-img-wrap { --img-tilt: -3deg; }
+
+.postit-row.in-view .slant-img-wrap {
+  opacity: 1;
+  transform: scale(1) rotate(var(--img-tilt));
+}
 
 .postit-row .slant-img {
   --notch: 10px;
+  position: relative;
   aspect-ratio: 4 / 3;
   overflow: hidden;
-  border: 5px solid var(--ink);
-  filter: drop-shadow(6px 6px 0 var(--ink));
+  border-style: solid;
+  border-width: 5px;
+  border-top-color: var(--babyblue);
+  border-left-color: var(--babyblue);
+  border-right-color: var(--ink);
+  border-bottom-color: var(--ink);
+  clip-path: polygon(
+    0 var(--notch), var(--notch) var(--notch), var(--notch) 0,
+    calc(100% - var(--notch)) 0, calc(100% - var(--notch)) var(--notch), 100% var(--notch),
+    100% calc(100% - var(--notch)), calc(100% - var(--notch)) calc(100% - var(--notch)), calc(100% - var(--notch)) 100%,
+    var(--notch) 100%, var(--notch) calc(100% - var(--notch)), 0 calc(100% - var(--notch))
+  );
 }
 
 .postit-row .slant-img img {
@@ -487,11 +715,10 @@ section + section { border-top: 1px solid var(--line); }
   height: 41px;
   background: rgba(247, 224, 156, 0.5);
   border: 1px solid rgba(28, 43, 32, 0.12);
-  box-shadow: 0 3px 5px rgba(28, 43, 32, 0.18);
   transform-origin: left center;
   transform: scaleX(0);
   z-index: 2;
-  transition: transform 0.6s cubic-bezier(0.65, 0.05, 0.36, 1);
+  transition: transform 0.6s cubic-bezier(0.65, 0.05, 0.36, 1) 0.1s;
 }
 
 .postit-row.in-view .slant-img-wrap .tape { transform: scaleX(1); }
@@ -517,7 +744,7 @@ footer p {
 .case-header .back {
   font-family: 'Cousine', 'Courier New', monospace;
   font-size: 0.9rem;
-  color: var(--accent);
+  color: var(--brown);
   margin-bottom: 32px;
   display: inline-block;
 }
@@ -549,7 +776,7 @@ footer p {
   font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--accent);
+  color: var(--brown);
   margin-bottom: 6px;
 }
 
@@ -579,11 +806,10 @@ footer p {
 
 .case-body figure img {
   --notch: 10px;
-  background: var(--bg-alt);
+  background: rgba(136, 171, 117, 0.18);
   aspect-ratio: 16/9;
   object-fit: cover;
   border: 4px solid var(--ink);
-  filter: drop-shadow(5px 5px 0 var(--ink));
 }
 
 .case-body figcaption {
@@ -605,16 +831,19 @@ footer p {
     gap: 32px;
   }
   .postit-row .postit,
+  .postit-row:nth-child(even) .postit {
+    --tilt: 0deg;
+    width: 100%;
+  }
   .postit-row .slant-img-wrap,
-  .postit-row:nth-child(even) .postit,
   .postit-row:nth-child(even) .slant-img-wrap {
-    transform: none;
+    --img-tilt: 0deg;
     width: 100%;
   }
 }
 
 @media (max-width: 600px) {
-  html { font-size: 16px; }
+  html { font-size: 15px; }
   section { padding: 56px 0; }
   .hero { padding-top: 72px; }
   .nav-icons { gap: 16px; }

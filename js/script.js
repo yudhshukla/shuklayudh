@@ -1,4 +1,4 @@
-const TYPE_SPEED = 60000 / (340 * 5); // ~340 wpm, 5 chars/word
+const TYPE_SPEED = 60000 / (440 * 5); //
 
 function typeElement(el, text, msPerChar, onComplete) {
   const runId = (el._typeRunId = (el._typeRunId || 0) + 1);
@@ -30,7 +30,28 @@ if (heroHeading && heroLead) {
   heroLead.style.minHeight = heroLead.getBoundingClientRect().height + 'px';
 
   typeElement(heroHeading, headingText, TYPE_SPEED, () => {
-    typeElement(heroLead, leadText, TYPE_SPEED);
+    typeElement(heroLead, leadText, TYPE_SPEED, () => {
+      const bubble = document.getElementById('heroBubble');
+      if (bubble) setTimeout(() => bubble.classList.add('show'), 1000);
+    });
+  });
+}
+
+const cardReveals = document.querySelectorAll('.card-reveal');
+
+if (cardReveals.length) {
+  const cardObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('in-view');
+        cardObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.2 });
+
+  cardReveals.forEach((card, i) => {
+    card.style.transitionDelay = (i % 2) * 0.08 + 's';
+    cardObserver.observe(card);
   });
 }
 
