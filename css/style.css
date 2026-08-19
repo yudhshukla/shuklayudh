@@ -24,12 +24,12 @@ body {
 img { max-width: 100%; display: block; }
 a { color: inherit; text-decoration: none; }
 
-a, button, .btn-block, .project-card {
-  cursor: url("../assets/PF3C_zlk_Click2.cur"), pointer;
+a, button, .btn-block, .project-card, .timeline-item {
+  cursor: url("../assets/PF3C_zlk_Click2.cur"), auto;
 }
 
 p, li, .postit p {
-  cursor: url("../assets/PF3C_zlk_IBream.cur"), text;
+  cursor: url("../assets/PF3C_zlk_IBream.cur"), auto;
 }
 
 h1, h2, h3, .display {
@@ -38,6 +38,13 @@ h1, h2, h3, .display {
 
 /* ---------- Pixel-art frame: stepped/notched corners instead of
    rounded ones, for a retro game-UI window/panel look ---------- */
+/* will-change gives every notched element its own standing compositing
+   layer. Without it, an active transform/transition on ONE clip-path
+   element elsewhere on the page (e.g. a hovered timeline card) can
+   force the browser to re-rasterize other clip-path regions in the
+   same paint pass, flashing whatever's underneath them for a frame —
+   that's what caused the hero image/bubble to flicker while hovering
+   the timeline, despite the two having no relation to each other. */
 .pixel-frame {
   --notch: 8px;
   border-radius: 0;
@@ -47,6 +54,7 @@ h1, h2, h3, .display {
     100% calc(100% - var(--notch)), calc(100% - var(--notch)) calc(100% - var(--notch)), calc(100% - var(--notch)) 100%,
     var(--notch) 100%, var(--notch) calc(100% - var(--notch)), 0 calc(100% - var(--notch))
   );
+  will-change: transform;
 }
 
 /* ---------- Tokens ----------
@@ -245,7 +253,7 @@ section + section,
   aspect-ratio: 4 / 3;
   overflow: hidden;
   border: 4px solid var(--ink);
-  background: rgba(136, 171, 117, 0.18);
+  background: var(--bg);
 }
 
 .hero .image-frame .thumb img {
@@ -329,23 +337,26 @@ section + section,
   margin: 0 -10px;
 }
 
-/* No grid `gap` — that space belongs to no element, so a cursor
-   crossing it briefly hovers nothing, causing the card's hover
-   state to flicker on/off as you move across the row. Instead the
-   visual gap is this padding, which IS part of the item's own
-   hoverable box, so the hover trigger below (on the item, not just
-   the card) covers the whole cell with no dead zone. */
+/* No grid `gap` — that space belongs to no element and would sit
+   outside the card entirely. Instead the visual gap between cards is
+   this padding, so it reads the same as a gap without introducing a
+   strip of unhoverable dead space between cards.
+
+   Opacity-only entrance, no transform: this is the ancestor of
+   .timeline-card, which already has its own hover transform, and a
+   second independently-transitioning transform on the parent stacks
+   nested compositing layers on top of a clipped child — that stack
+   was the real source of the hover flicker. Only the card itself
+   transforms now, same as how .project-card's hover lift works. */
 .timeline-item {
   position: relative;
   padding: 30px 10px 0;
   opacity: 0;
-  transform: translateY(14px);
-  transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: opacity 0.35s ease;
 }
 
 .timeline.in-view .timeline-item {
   opacity: 1;
-  transform: translateY(0);
 }
 
 .timeline.in-view .timeline-item:nth-child(1) { transition-delay: 0s; }
@@ -365,21 +376,27 @@ section + section,
   pointer-events: none;
 }
 
+/* Structurally the same pattern as .project-card's hover: self-hover
+   (not a parent triggering a child) and intrinsic-ish height (a fixed
+   min-height, not height:100% of a grid-stretched, possibly-
+   fractional-pixel row). A clipped element being force-stretched to a
+   fractional pixel height while also transform-animating was the
+   actual source of the flicker. */
 .timeline-card {
   --notch: 6px;
   position: relative;
-  height: 100%;
   display: flex;
   flex-direction: column;
+  min-height: 210px;
   background: var(--olive);
   color: var(--ink);
   border: 3px solid var(--ink);
   padding: 14px 16px;
   padding-right: 30px;
-  transition: transform 0.2s ease-out;
+  transition: transform 0.2s ease;
 }
 
-.timeline-item:hover .timeline-card,
+.timeline-card:hover,
 .timeline-card:focus-visible {
   transform: translateY(-3px);
 }
@@ -395,14 +412,13 @@ section + section,
   font-family: 'Cousine', 'Courier New', monospace;
   font-size: 1.25rem;
   opacity: 0.6;
-  transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+  transition: opacity 0.2s ease-out;
   pointer-events: none;
 }
 
-.timeline-item:hover .timeline-card::after,
+.timeline-card:hover::after,
 .timeline-card:focus-visible::after {
   opacity: 1;
-  transform: translate(2px, -2px);
 }
 
 .timeline-item:nth-child(4n+1) .timeline-card { background: var(--olive); color: var(--ink); }
@@ -608,7 +624,7 @@ section + section,
   --notch: 10px;
   position: relative;
   aspect-ratio: 4 / 3;
-  background: rgba(136, 171, 117, 0.18);
+  background: var(--bg);
   overflow: hidden;
   border: 4px solid var(--ink);
   margin-bottom: 24px;
@@ -621,8 +637,11 @@ section + section,
 }
 
 /* Dialogue box: rises from the bottom of the image, covers only a
-   portion of it, types out the summary like the hero intro. A blinking
-   "more text" triangle reads as a game text box rather than a plain panel. */
+   portion of it, types out the summary like the hero intro. No "more
+   text" indicator here on purpose — the whole card is already a
+   single link, so a triangle implying there's more to reveal on
+   click would be a fake affordance; clicking anywhere just opens the
+   project like the rest of the card does. */
 .project-card .dialogue-box {
   --notch: 6px;
   position: absolute;
@@ -646,25 +665,11 @@ section + section,
   transform: translateY(0);
 }
 
-.project-card .dialogue-box::after {
-  content: "";
-  position: absolute;
-  right: 10px;
-  bottom: 7px;
-  width: 0;
-  height: 0;
-  border-left: 5px solid transparent;
-  border-right: 5px solid transparent;
-  border-top: 6px solid var(--ink);
-  animation: blink 1s steps(1) infinite;
-}
-
 .project-card .dialogue-box p {
   color: var(--ink);
   font-family: 'Cousine', 'Courier New', monospace;
   font-size: 0.72rem;
   line-height: 1.4;
-  padding-right: 14px;
 }
 
 .project-card h3 {
@@ -700,7 +705,11 @@ section + section,
   );
 }
 
-.project-card .tag-green { background: var(--ink); }
+/* Pick by category, not by card, so the same kind of tag always
+   reads as the same color: tag-green for research/methods work,
+   tag-blue for design/craft work, tag-brown for platform or medium
+   (Mobile, Web, Systems, etc). */
+.project-card .tag-green { background: var(--olive); }
 .project-card .tag-blue { background: var(--blue); }
 .project-card .tag-brown { background: var(--brown); }
 
@@ -967,7 +976,7 @@ footer p {
 
 .case-body figure img {
   --notch: 10px;
-  background: rgba(136, 171, 117, 0.18);
+  background: var(--bg);
   aspect-ratio: 16/9;
   object-fit: cover;
   border: 4px solid var(--ink);
@@ -977,6 +986,118 @@ footer p {
   font-size: 0.88rem;
   color: var(--ink-soft);
   margin-top: 10px;
+}
+
+.case-body section { scroll-margin-top: 100px; }
+
+/* Chapter nav: a fixed vertical rail of diamond markers (same shape
+   as the timeline nodes) with a fill that tracks reading progress
+   through .case-body. Labels stay hidden until hovered/focused; the
+   active chapter's label also flashes on briefly when it becomes
+   active (handled in script.js), then fades so it doesn't clutter
+   the rail while reading.
+
+   Each <li> holds the dot and its label as SIBLINGS, not
+   parent/child — .chapter-dot itself is rotated 45deg to draw the
+   diamond, and nesting the label inside it required counter-rotating
+   the label to cancel that out. Rotating a wide box back around its
+   own center doesn't purely undo an ancestor's rotation the way
+   rotating a point does, so the label visibly drifted down and to
+   the side by an amount proportional to its own width (longer labels
+   drifted further). Making them siblings under the (unrotated) <li>
+   sidesteps the whole problem — the label positions against a plain
+   box with no rotation to correct for. */
+.chapter-nav {
+  position: fixed;
+  left: 28px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 20;
+}
+
+.chapter-track {
+  position: absolute;
+  left: 4px;
+  top: 5px;
+  bottom: 5px;
+  width: 2px;
+  background: var(--line);
+}
+
+.chapter-track-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 0%;
+  background: var(--ink);
+  transition: height 0.15s linear;
+}
+
+.chapter-list {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.chapter-list li {
+  position: relative;
+}
+
+.chapter-dot {
+  display: block;
+  width: 10px;
+  height: 10px;
+  background: var(--bg);
+  border: 2px solid var(--ink);
+  transform: rotate(45deg);
+}
+
+.chapter-dot:hover,
+.chapter-dot:focus-visible {
+  background: var(--babyblue);
+}
+
+.chapter-dot.active {
+  background: var(--blue);
+  border-color: var(--blue);
+}
+
+.chapter-label {
+  position: absolute;
+  top: 50%;
+  left: 28px;
+  transform: translateY(-50%);
+  background: var(--ink);
+  color: var(--bg);
+  font-family: 'Cousine', 'Courier New', monospace;
+  font-size: 0.78rem;
+  white-space: nowrap;
+  padding: 4px 10px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.chapter-dot:hover + .chapter-label,
+.chapter-dot:focus-visible + .chapter-label {
+  opacity: 1;
+}
+
+.chapter-dot.active + .chapter-label {
+  background: var(--blue);
+}
+
+.chapter-label.flash {
+  opacity: 1;
+}
+
+@media (max-width: 1160px) {
+  .chapter-nav { display: none; }
 }
 
 /* ---------- Responsive ---------- */

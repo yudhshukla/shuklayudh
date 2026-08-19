@@ -85,6 +85,61 @@ if (postitRows.length) {
   postitRows.forEach((row) => revealObserver.observe(row));
 }
 
+// Chapter nav on the case-study page: highlights whichever section is
+// crossing the vertical center of the viewport, and fills the track
+// to match how far the reader has gotten through .case-body overall.
+const chapterNav = document.querySelector('.chapter-nav');
+
+if (chapterNav) {
+  const chapterFill = document.getElementById('chapterFill');
+  const dots = [...chapterNav.querySelectorAll('.chapter-dot')];
+  const sections = dots
+    .map((dot) => document.querySelector(dot.getAttribute('href')))
+    .filter(Boolean);
+
+  let flashTimeout;
+  let activeId = null;
+
+  const setActive = (id) => {
+    if (id === activeId) return;
+    activeId = id;
+    dots.forEach((dot) => dot.classList.toggle('active', dot.getAttribute('href') === `#${id}`));
+
+    const label = chapterNav.querySelector('.chapter-dot.active + .chapter-label');
+    chapterNav.querySelectorAll('.chapter-label.flash').forEach((el) => el.classList.remove('flash'));
+    clearTimeout(flashTimeout);
+    if (label) {
+      label.classList.add('flash');
+      flashTimeout = setTimeout(() => label.classList.remove('flash'), 1800);
+    }
+  };
+
+  const chapterObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) setActive(entry.target.id);
+    });
+  }, { rootMargin: '-45% 0px -50% 0px' });
+
+  sections.forEach((section) => chapterObserver.observe(section));
+
+  const updateChapterFill = () => {
+    const atBottom = window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 2;
+    if (atBottom) {
+      chapterFill.style.height = '100%';
+      setActive(sections[sections.length - 1].id);
+      return;
+    }
+    const firstTop = sections[0].getBoundingClientRect().top + window.scrollY;
+    const lastBottom = sections[sections.length - 1].getBoundingClientRect().bottom + window.scrollY;
+    const scrolled = window.scrollY + window.innerHeight / 2 - firstTop;
+    const pct = Math.min(100, Math.max(0, (scrolled / (lastBottom - firstTop)) * 100));
+    chapterFill.style.height = `${pct}%`;
+  };
+
+  window.addEventListener('scroll', updateChapterFill, { passive: true });
+  updateChapterFill();
+}
+
 document.querySelectorAll('.project-card').forEach((card) => {
   const dialogueText = card.querySelector('.dialogue-box p');
   if (!dialogueText) return;
